@@ -259,3 +259,175 @@ terraform destroy -auto-approve
 
 **Suresh Kumar**
 DevOps Engineer | Cloud Engineer
+
+
+
+
+
+
+
+
+
+
+
+
+
+this is for all shot creation of vpc and ec2-instance
+
+# 🔹 Provider
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# 🔹 VPC
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "my-vpc"
+  }
+}
+
+# 🔹 Public Subnet (FIXED AZ)
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "ap-south-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet"
+  }
+}
+
+# 🔹 Internet Gateway
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "my-igw"
+  }
+}
+
+# 🔹 Route Table
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "public-rt"
+  }
+}
+
+# 🔹 Route Table Association
+resource "aws_route_table_association" "assoc" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+# 🔹 Security Group (22,80)
+resource "aws_security_group" "ec2_sg" {
+  name   = "ec2-sg"
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ec2-sg"
+  }
+}
+
+# 🔹 Key Pair (ED25519 FIXED)
+resource "aws_key_pair" "key" {
+  key_name   = "terraform-key"
+  public_key = file("C:/Users/HP/.ssh/id_ed25519.pub")
+}
+
+# 🔹 Latest AMI
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+# 🔹 EC2 Instance
+resource "aws_instance" "example" {
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = "t3.micro"
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
+  key_name                    = aws_key_pair.key.key_name
+  associate_public_ip_address = true
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+
+              cat <<HTML > /var/www/html/index.html
+              <html>
+              <head>
+                <title>DevOps Engineer</title>
+                <style>
+                  body {
+                    background-color: skyblue;
+                    text-align: center;
+                    font-family: Arial;
+                  }
+                  h1 {
+                    color: darkblue;
+                  }
+                  .logo {
+                    font-size: 28px;
+                    margin: 10px;
+                  }
+                </style>
+              </head>
+              <body>
+                <h1>🚀 Welcome Suresh - AWS DevOps Engineer 🚀</h1>
+                <p>Provisioned using Terraform</p>
+
+                <div class="logo">☁️ AWS</div>
+                <div class="logo">🔷 Azure</div>
+                <div class="logo">☸️ Kubernetes</div>
+                <div class="logo">🐳 Docker</div>
+
+                <p>Infrastructure as Code 💯</p>
+              </body>
+              </html>
+              HTML
+              EOF
+
+  tags = {
+    Name = "DevOps-EC2"
+  }
+}
