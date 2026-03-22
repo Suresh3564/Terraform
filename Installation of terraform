@@ -1,0 +1,288 @@
+# 🚀 Terraform Installation & AWS Setup Guide
+
+## 📌 1. Introduction to Terraform
+
+Terraform is an **Infrastructure as Code (IaC)** tool developed by HashiCorp. It allows you to create, manage, and automate infrastructure (like servers, networks, databases) using code instead of manual configuration.
+
+---
+
+## 💻 2. Terraform Installation on Windows
+
+### Step 1: Download Terraform
+
+1. Go to official site: https://developer.hashicorp.com/terraform/downloads
+2. Download **Windows (amd64)** ZIP file
+
+---
+
+### Step 2: Extract the File
+
+* Extract the ZIP file
+* You will get:
+
+```
+terraform.exe
+```
+
+---
+
+### Step 3: Move to Folder
+
+Create a folder:
+
+```
+C:\terraform
+```
+
+Move `terraform.exe` into this folder.
+
+---
+
+### Step 4: Set Environment Variable
+
+1. Press **Windows + R**
+2. Type:
+
+```
+sysdm.cpl
+```
+
+3. Go to:
+
+```
+Advanced → Environment Variables
+```
+
+4. Select **Path → Edit → New**
+5. Add:
+
+```
+C:\terraform
+```
+
+6. Click OK
+
+---
+
+### Step 5: Verify Installation
+
+Open Command Prompt:
+
+```
+terraform -version
+```
+
+✔ If version shows → Installation successful
+
+---
+
+## 🧑‍💻 3. Install Code Editor (Optional but Recommended)
+
+Install:
+
+* Visual Studio Code
+
+Install extension:
+
+* Terraform (by HashiCorp)
+
+---
+
+## ☁️ 4. AWS Account Setup
+
+### Step 1: Create AWS Account
+
+Go to:
+https://aws.amazon.com
+
+---
+
+### Step 2: Create IAM User
+
+1. Open IAM service
+2. Create user:
+
+```
+terraform-user
+```
+
+3. Enable:
+
+```
+Programmatic access
+```
+
+4. Attach policy:
+
+```
+AdministratorAccess
+```
+
+---
+
+### Step 3: Get Credentials
+
+You will get:
+
+```
+Access Key ID
+Secret Access Key
+```
+
+⚠️ Keep this safe
+
+---
+
+## 🔑 5. Configure AWS CLI
+
+### Install AWS CLI
+
+Download:
+https://aws.amazon.com/cli/
+
+---
+
+### Configure
+
+Run:
+
+```
+aws configure
+```
+
+Enter:
+
+```
+Access Key: XXXXX
+Secret Key: XXXXX
+Region: ap-south-1
+Output: json
+```
+
+---
+
+### Verify
+
+```
+aws sts get-caller-identity
+```
+
+✔ If output comes → AWS connected successfully
+
+---
+
+## 🔗 6. Connect Terraform with AWS
+
+Create a file:
+
+```
+main.tf
+```
+
+Example:
+
+```
+provider "aws" {
+  region = "ap-south-1"
+}
+```
+
+---
+
+## ⚙️ 7. Terraform Workflow
+
+### Initialize
+
+```
+terraform init
+```
+
+---
+
+### Plan
+
+```
+terraform plan
+```
+
+---
+
+### Apply
+
+```
+terraform apply
+```
+
+Type:
+
+```
+yes
+```
+
+---
+
+### Destroy (Cleanup)
+
+```
+terraform destroy
+```
+
+---
+
+## 🧠 8. Important Concepts
+
+### Provider
+
+Connects Terraform to cloud (AWS, Azure)
+
+### Resource
+
+Defines what to create (EC2, VPC, etc.)
+
+### State File
+
+Terraform tracks resources in:
+
+```
+terraform.tfstate
+```
+
+---
+
+## 🚀 9. Example Use Case
+
+Using Terraform, you can create:
+
+* VPC
+* Subnet
+* EC2 Instance
+* Security Group
+
+All with a single command:
+
+```
+terraform apply
+```
+
+---
+
+## 💡 10. Benefits of Terraform
+
+* Automation
+* Faster deployment
+* Consistency
+* Version control
+* Multi-cloud support
+
+---
+
+## 🧾 11. Conclusion
+
+Terraform simplifies infrastructure management by allowing developers and DevOps engineers to manage infrastructure using code. It improves efficiency, reduces manual errors, and supports scalable deployments.
+
+---
+
+## 👨‍💻 Author
+
+Suresh Kumar
+AWS DevOps Engineer
