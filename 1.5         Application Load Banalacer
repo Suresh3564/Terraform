@@ -1,0 +1,417 @@
+                   Application Load Balancer
+🚀 What is Application Load Balancer (ALB)?
+
+👉 Application Load Balancer (ALB) is a Layer 7 (HTTP/HTTPS) load balancer in AWS.
+
+It:
+
+Distributes incoming traffic across multiple EC2 instances
+Works based on HTTP rules (path, host, headers)
+Provides high availability & fault tolerance
+
+
+
+You want ONE Terraform file with:
+
+✅ VPC
+✅ Public Subnets (2 AZ)
+✅ 2 EC2 instances (different colors)
+✅ Application Load Balancer (ALB)
+✅ Target Group + Listener
+✅ Website hosting
+
+
+🚀 ✅ COMPLETE TERRAFORM (ALL-IN-ONE)
+
+
+# =========================
+# 🔹 PROVIDER
+# =========================
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# =========================
+# 🔹 VPC
+# =========================
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "suresh-vpc"
+  }
+}
+
+# =========================
+# 🔹 SUBNETS (2 PUBLIC AZ)
+# =========================
+resource "aws_subnet" "public1" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "ap-south-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet-1"
+  }
+}
+
+resource "aws_subnet" "public2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "ap-south-1b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet-2"
+  }
+}
+
+# =========================
+# 🔹 INTERNET GATEWAY
+# =========================
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+}
+
+# =========================
+# 🔹 ROUTE TABLE
+# =========================
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+}
+
+resource "aws_route_table_association" "assoc1" {
+  subnet_id      = aws_subnet.public1.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_route_table_association" "assoc2" {
+  subnet_id      = aws_subnet.public2.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+# =========================
+# 🔹 SECURITY GROUP (EC2)
+# =========================
+resource "aws_security_group" "ec2_sg" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# =========================
+# 🔹 SECURITY GROUP (ALB)
+# =========================
+resource "aws_security_group" "alb_sg" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# =========================
+# 🔹 KEY PAIR
+# =========================
+resource "aws_key_pair" "key" {
+  key_name   = "terraform-key"
+  public_key = file("C:/Users/HP/.ssh/id_ed25519.pub")
+}
+
+# =========================
+# 🔹 AMI
+# =========================
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+# =========================
+# 🔹 EC2 INSTANCE 1 (GREEN)
+# =========================
+resource "aws_instance" "web1" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t2.micro"
+
+  subnet_id = aws_subnet.public1.id
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  key_name = aws_key_pair.key.key_name
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+
+              echo "<body style='background-color:green'><h1>Server 1 - GREEN</h1></body>" > /var/www/html/index.html
+              EOF
+}
+
+# =========================
+# 🔹 EC2 INSTANCE 2 (BLUE)
+# =========================
+resource "aws_instance" "web2" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t2.micro"
+
+  subnet_id = aws_subnet.public2.id
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+  key_name = aws_key_pair.key.key_name
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+
+              echo "<body style='background-color:blue'><h1>Server 2 - BLUE</h1></body>" > /var/www/html/index.html
+              EOF
+}
+
+# =========================
+# 🔹 TARGET GROUP
+# =========================
+resource "aws_lb_target_group" "tg" {
+  name     = "suresh-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+}
+
+# =========================
+# 🔹 ATTACH EC2 TO TG
+# =========================
+resource "aws_lb_target_group_attachment" "t1" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.web1.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "t2" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.web2.id
+  port             = 80
+}
+
+# =========================
+# 🔹 APPLICATION LOAD BALANCER
+# =========================
+resource "aws_lb" "alb" {
+  name               = "suresh-alb"
+  internal           = false
+  load_balancer_type = "application"
+
+  security_groups = [aws_security_group.alb_sg.id]
+  subnets         = [
+    aws_subnet.public1.id,
+    aws_subnet.public2.id
+  ]
+}
+
+# =========================
+# 🔹 LISTENER
+# =========================
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+
+# =========================
+# 🔹 OUTPUT
+# =========================
+output "alb_dns" {
+  value = aws_lb.alb.dns_name
+}
+
+
+
+🚀 HOW TO USE
+terraform init
+terraform apply -auto-approve
+🌐 ACCESS
+
+👉 After deploy:
+
+http://<ALB-DNS>
+
+You will see:
+
+💚 Green page
+💙 Blue page
+
+(Load balancer switches between both)
+
+🔥 INTERVIEW EXPLANATION (VERY IMPORTANT)
+
+👉 Say this:
+
+Created custom VPC with 2 public subnets across AZs
+Deployed 2 EC2 instances with Apache
+Used user_data for automation
+Configured Application Load Balancer
+Attached instances to Target Group
+Achieved high availability + load distribution
+
+
+
+
+                      Practical 2
+🚀 What is Application Load Balancer (ALB)?
+
+👉 Application Load Balancer (ALB) is a Layer 7 (HTTP/HTTPS) load balancer in AWS.
+
+It:
+
+Distributes incoming traffic across multiple EC2 instances
+Works based on HTTP rules (path, host, headers)
+Provides high availability & fault tolerance
+🔷 Real-Time Flow (Your Project)
+User (Browser)
+      ↓
+Application Load Balancer (ALB)
+      ↓
+Target Group
+      ↓
+EC2 Instance 1 (GREEN)
+EC2 Instance 2 (BLUE)
+
+👉 ALB decides which server to send request to
+
+⚙️ ALB Components in Terraform
+
+Now let’s break your Terraform code into 4 main parts 👇
+
+🔹 1. Load Balancer
+resource "aws_lb" "alb" {
+  name               = "suresh-alb"
+  load_balancer_type = "application"
+  internal           = false
+
+  security_groups = [aws_security_group.alb_sg.id]
+  subnets         = [aws_subnet.public1.id, aws_subnet.public2.id]
+}
+💡 Explanation:
+load_balancer_type = "application" → ALB (Layer 7)
+internal = false → Public (internet-facing)
+subnets → Must be in at least 2 AZs (high availability)
+security_groups → Allows HTTP traffic
+
+👉 This creates the entry point for users
+
+🔹 2. Target Group
+resource "aws_lb_target_group" "tg" {
+  name     = "suresh-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+}
+💡 Explanation:
+Group of backend servers (EC2)
+ALB sends traffic to this group
+Health checks happen here (by default)
+
+👉 Think: ALB → Target Group → EC2
+
+🔹 3. Target Group Attachment
+resource "aws_lb_target_group_attachment" "t1" {
+  target_group_arn = aws_lb_target_group.tg.arn
+  target_id        = aws_instance.web1.id
+  port             = 80
+}
+💡 Explanation:
+Registers EC2 instances to target group
+You attached:
+EC2 GREEN
+EC2 BLUE
+
+👉 Now ALB knows where to send traffic
+
+🔹 4. Listener
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+💡 Explanation:
+Listener = entry rule
+Listens on port 80
+Forwards traffic to target group
+
+👉 Without listener → ALB won’t work
+
+🔥 How Traffic Works (Step-by-Step)
+
+User hits:
+
+http://ALB-DNS
+ALB receives request
+Listener checks rules
+Sends request to Target Group
+Target Group selects EC2
+Response comes back
+🎯 Load Balancing Behavior
+
+👉 ALB uses Round Robin by default
+
+So:
+
+Request 1 → GREEN
+Request 2 → BLUE
+Request 3 → GREEN
+🔒 Security Flow
+ALB Security Group → allows HTTP (80)
+EC2 Security Group → allows traffic from ALB
+
+👉 Best practice:
+Instead of 0.0.0.0/0, allow only ALB SG (advanced level)
