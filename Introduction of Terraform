@@ -1,0 +1,144 @@
+🌍 What is Terraform?
+🔹 Simple Definition
+
+Terraform is a tool used to create and manage infrastructure using code instead of manual steps.
+
+👉 Developed by HashiCorp
+
+💡 In simple words
+
+Instead of doing this manually:
+
+Login to AWS
+Create VPC
+Create EC2
+Configure security
+
+👉 You write code like:
+
+resource "aws_instance" "example" {
+  instance_type = "t2.micro"
+}
+
+👉 Then run:
+
+terraform apply
+
+👉 Everything is created automatically 🚀
+
+🧠 What is Infrastructure as Code (IaC)?
+🔹 Meaning
+
+Infrastructure as Code (IaC) means:
+
+👉 Managing servers, networks, databases using code instead of clicking in UI
+
+🔹 Example
+
+Manual way ❌
+
+Click → Create EC2 → Configure
+
+Terraform way ✅
+
+Write code → Run command → Done
+⚙️ How Terraform Works
+4
+Step-by-step flow:
+Write code (.tf file)
+
+Run:
+
+terraform init
+
+Preview:
+
+terraform plan
+
+Apply:
+
+terraform apply
+
+👉 Terraform talks to cloud (AWS, Azure, etc.) and creates resources
+
+🔑 Key Components of Terraform
+🔹 1. Provider
+
+👉 Connects Terraform to cloud
+
+Example:
+
+provider "aws" {
+  region = "ap-south-1"
+}
+🔹 2. Resource
+
+👉 What you want to create
+
+Example:
+
+resource "aws_instance" "example" {
+  instance_type = "t2.micro"
+}
+🔹 3. State File
+
+👉 Terraform keeps track of created resources
+
+File:
+
+terraform.tfstate
+🔹 4. Variables (optional)
+
+👉 Used to make code reusable
+
+🚀 Why Terraform is Used
+✅ 1. Automation
+
+No manual work — everything automated
+
+✅ 2. Consistency
+
+Same code → same output every time
+
+✅ 3. Faster Deployment
+
+Create full infra in minutes
+
+✅ 4. Version Control
+
+Store code in Git (track changes)
+
+✅ 5. Multi-cloud Support
+
+Works with:
+
+Amazon Web Services
+Microsoft Azure
+Google Cloud
+🔥 Terraform vs Manual Setup
+Feature	Manual	Terraform
+Speed	Slow	Fast
+Errors	High	Low
+Repeatability	Hard	Easy
+Automation	No	Yes
+Version control	No	Yes
+🧠 Real-Time Example
+
+👉 Requirement:
+
+VPC
+Subnet
+EC2
+Without Terraform:
+30–60 mins manual work ❌
+With Terraform:
+Write code once
+
+Run:
+
+terraform apply
+Done in minutes ✅
+💯 Short Interview Answer
+
+👉
+“Terraform is an Infrastructure as Code tool developed by HashiCorp that allows us to provision and manage cloud resources using declarative configuration files. It helps automate infrastructure, ensures consistency, and supports multi-cloud environments.”
