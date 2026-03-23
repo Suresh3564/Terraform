@@ -246,8 +246,8 @@ resource "aws_lb_listener" "listener" {
 
 # ================= AUTO SCALING =================
 resource "aws_autoscaling_group" "blue_asg" {
-  desired_capacity = 1
-  max_size         = 1
+  desired_capacity = 2
+  max_size         = 3
   min_size         = 1
 
   vpc_zone_identifier = [aws_subnet.public1.id]
@@ -263,8 +263,8 @@ resource "aws_autoscaling_group" "blue_asg" {
 }
 
 resource "aws_autoscaling_group" "green_asg" {
-  desired_capacity = 1
-  max_size         = 1
+  desired_capacity = 2
+  max_size         = 3
   min_size         = 1
 
   vpc_zone_identifier = [aws_subnet.public2.id]
