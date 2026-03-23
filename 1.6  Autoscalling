@@ -1,0 +1,361 @@
+# 🧪 AWS VPC + ALB + Auto Scaling (ASG) – Terraform Project
+
+**Service Used:** Amazon VPC, EC2, Application Load Balancer, Auto Scaling, Terraform
+
+---
+
+# 🔷 Architecture Flow
+
+```
+Create VPC (10.0.0.0/16)
+        ↓
+Create 2 Public Subnets (2 AZ)
+        ↓
+Attach Internet Gateway
+        ↓
+Create Route Table → IGW
+        ↓
+Associate Subnets
+        ↓
+Create Security Groups (ALB + EC2)
+        ↓
+Create Launch Template (t3.micro)
+        ↓
+Create Target Group
+        ↓
+Create Application Load Balancer
+        ↓
+Create Listener (HTTP)
+        ↓
+Create Auto Scaling Group
+        ↓
+Attach ASG to Target Group
+        ↓
+Deploy Website (Apache via user_data)
+```
+
+---
+
+# 📌 Project Objective
+
+This project demonstrates how to:
+
+* Build a custom VPC from scratch
+* Deploy scalable EC2 instances using Auto Scaling
+* Distribute traffic using Application Load Balancer
+* Host a website using Apache
+* Achieve high availability and fault tolerance
+
+---
+
+# 🏗️ Architecture Details
+
+| Component     | Value              |
+| ------------- | ------------------ |
+| Region        | ap-south-1         |
+| VPC CIDR      | 10.0.0.0/16        |
+| Subnets       | 2 Public Subnets   |
+| Instance Type | t3.micro           |
+| Load Balancer | Application (ALB)  |
+| Scaling       | Auto Scaling Group |
+
+---
+
+# ⚙️ Terraform Code (ALL-IN-ONE)
+
+```hcl
+# =========================
+# PROVIDER
+# =========================
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# =========================
+# VPC
+# =========================
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "suresh-vpc"
+  }
+}
+
+# =========================
+# SUBNETS
+# =========================
+resource "aws_subnet" "public1" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "ap-south-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet-1"
+  }
+}
+
+resource "aws_subnet" "public2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "ap-south-1b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet-2"
+  }
+}
+
+# =========================
+# INTERNET GATEWAY
+# =========================
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "suresh-igw"
+  }
+}
+
+# =========================
+# ROUTE TABLE
+# =========================
+resource "aws_route_table" "rt" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "public-rt"
+  }
+}
+
+resource "aws_route_table_association" "a1" {
+  subnet_id      = aws_subnet.public1.id
+  route_table_id = aws_route_table.rt.id
+}
+
+resource "aws_route_table_association" "a2" {
+  subnet_id      = aws_subnet.public2.id
+  route_table_id = aws_route_table.rt.id
+}
+
+# =========================
+# SECURITY GROUPS
+# =========================
+resource "aws_security_group" "alb_sg" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "alb-sg"
+  }
+}
+
+resource "aws_security_group" "ec2_sg" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ec2-sg"
+  }
+}
+
+# =========================
+# AMI
+# =========================
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners = ["amazon"]
+
+  filter {
+    name = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
+# =========================
+# LAUNCH TEMPLATE
+# =========================
+resource "aws_launch_template" "lt" {
+  name_prefix   = "suresh-lt"
+  image_id      = data.aws_ami.amazon_linux.id
+  instance_type = "t3.micro"
+
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
+  user_data = base64encode(<<EOF
+#!/bin/bash
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "<h1>Welcome to Auto Scaling - Suresh DevOps</h1>" > /var/www/html/index.html
+EOF
+  )
+}
+
+# =========================
+# TARGET GROUP
+# =========================
+resource "aws_lb_target_group" "tg" {
+  name     = "suresh-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+}
+
+# =========================
+# APPLICATION LOAD BALANCER
+# =========================
+resource "aws_lb" "alb" {
+  name               = "suresh-alb"
+  load_balancer_type = "application"
+
+  subnets         = [aws_subnet.public1.id, aws_subnet.public2.id]
+  security_groups = [aws_security_group.alb_sg.id]
+}
+
+# =========================
+# LISTENER
+# =========================
+resource "aws_lb_listener" "listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+
+# =========================
+# AUTO SCALING GROUP
+# =========================
+resource "aws_autoscaling_group" "asg" {
+  desired_capacity = 2
+  max_size         = 3
+  min_size         = 1
+
+  vpc_zone_identifier = [
+    aws_subnet.public1.id,
+    aws_subnet.public2.id
+  ]
+
+  launch_template {
+    id      = aws_launch_template.lt.id
+    version = "$Latest"
+  }
+
+  target_group_arns = [aws_lb_target_group.tg.arn]
+
+  health_check_type = "EC2"
+
+  tag {
+    key                 = "Name"
+    value               = "suresh-asg-instance"
+    propagate_at_launch = true
+  }
+}
+
+# =========================
+# OUTPUT
+# =========================
+output "alb_dns" {
+  value = aws_lb.alb.dns_name
+}
+```
+
+---
+
+# 🚀 Execution Steps
+
+```bash
+terraform init
+terraform apply -auto-approve
+```
+
+---
+
+# 🌐 Access Application
+
+```
+http://<ALB-DNS>
+```
+
+---
+
+# 🔥 How It Works
+
+* ALB receives incoming traffic
+* Forwards to Target Group
+* ASG automatically creates EC2 instances
+* Load is distributed across instances
+* If instance fails → ASG replaces it
+
+---
+
+# 🎯 Real-Time DevOps Use Case
+
+* High availability web applications
+* Auto scaling based on demand
+* Fault-tolerant architecture
+* Production-ready setup
+
+---
+
+# 🧠 Interview Explanation
+
+> I created a VPC with public subnets, deployed an Application Load Balancer, and used a Launch Template with an Auto Scaling Group (t3.micro instances). The ALB distributes traffic, and ASG ensures automatic scaling and high availability.
+
+---
+
+# 🧹 Cleanup
+
+```bash
+terraform destroy -auto-approve
+```
+
+---
+
+# 👨‍💻 Author
+
+**Suresh Kumar**
+DevOps Engineer | Cloud Engineer
