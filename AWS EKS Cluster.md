@@ -1,3 +1,4 @@
+[AWS EKS.txt](https://github.com/user-attachments/files/26447093/AWS.EKS.txt)
 🚀 What is Amazon EKS?
 
 Amazon Web Services EKS (Elastic Kubernetes Service) is a managed Kubernetes service.
