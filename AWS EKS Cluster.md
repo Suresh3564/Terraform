@@ -1,4 +1,3 @@
-[AWS EKS.txt](https://github.com/user-attachments/files/26447093/AWS.EKS.txt)
 🚀 What is Amazon EKS?
 
 Amazon Web Services EKS (Elastic Kubernetes Service) is a managed Kubernetes service.
@@ -9,8 +8,6 @@ Amazon Web Services EKS (Elastic Kubernetes Service) is a managed Kubernetes ser
 
 👉 “EKS is a managed Kubernetes service by AWS where AWS manages the control plane, and we manage worker nodes and applications.”
 
-🧠 ARCHITECTURE (IMPORTANT)
-4
 🔹 2 Main Parts
 1️⃣ Control Plane (Managed by AWS)
 API Server
@@ -94,7 +91,7 @@ aws_eks_node_group
 
 Instance type → t3.micro
 Scaling → 1 to 2 nodes
-🔄 COMPLETE FLOW (REAL TIME)
+
 🔁 Flow:
 Write Terraform
 terraform init
@@ -145,16 +142,7 @@ I suggest next steps:
 👉 Connect with ArgoCD (your skill 🔥)
 👉 CI/CD pipeline
 
-If you want, I’ll give you FULL REAL-TIME PROJECT
 
-👉 Terraform + EKS + ArgoCD + App Deployment (resume ready)
-
-Just say: "give project" 💥
-
-hello give me with all one shot code also
-
-Got it Suresh 👍 — you want everything in ONE FILE + ready-to-run + real-time usable 🚀
-I’ll give you:
 
 ✅ Complete Terraform (EKS setup)
 ✅ Commands
@@ -359,3 +347,25 @@ aws_iam_role_policy_attachment.cni_policy,
 aws_iam_role_policy_attachment.ecr_policy
 ]
 }
+
+⚙️ STEP-BY-STEP COMMANDS (RUN THIS EXACTLY)
+🟢 Step 1: Initialize Terraform
+terraform init
+🟢 Step 2: Plan
+terraform plan
+🟢 Step 3: Apply
+terraform apply --auto-approve
+
+⏳ Takes ~10–15 minutes
+
+🔥 AFTER CLUSTER CREATED (IMPORTANT)
+
+👉 Configure kubeconfig:
+
+aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
+✅ VERIFY CLUSTER
+kubectl get nodes
+
+✔ Output:
+
+ip-10-0-x-x   Ready
