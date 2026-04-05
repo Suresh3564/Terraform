@@ -1,4 +1,4 @@
-# 🚀 Amazon EKS with Terraform – Complete Guide
+# 🚀 Amazon EKS (Elastic Kubernetes Service) – One-Shot Complete Guide
 
 ## 👨‍💻 Author
 
@@ -9,14 +9,20 @@ Linux | DevOps | Cloud Engineer
 
 # 🧠 1. What is Amazon EKS?
 
-Amazon Web Services Elastic Kubernetes Service (EKS) is a **managed Kubernetes service**.
+Amazon EKS is a **managed Kubernetes service by AWS**.
 
-👉 AWS manages the control plane
-👉 You manage worker nodes and applications
+👉 AWS manages:
+
+* Control Plane (API server, etcd, scheduler)
+
+👉 You manage:
+
+* Worker nodes (EC2)
+* Applications (Pods, Deployments)
 
 ---
 
-## 🔹 Simple Interview Definition
+## 🔹 Interview Definition
 
 EKS is a managed Kubernetes service where AWS manages the control plane, and we manage worker nodes and workloads.
 
@@ -24,300 +30,34 @@ EKS is a managed Kubernetes service where AWS manages the control plane, and we 
 
 # 🧩 2. EKS Architecture
 
-## 🔹 1. Control Plane (Managed by AWS)
+## 🔹 Control Plane (AWS Managed)
 
 * API Server
 * etcd
 * Scheduler
 * Controller Manager
 
-👉 Fully managed by AWS
+👉 No need to manage
 
 ---
 
-## 🔹 2. Worker Nodes (Managed by You)
+## 🔹 Worker Nodes (User Managed)
 
 * EC2 instances
 * Run Pods
 * Part of Node Group
 
-👉 You manage:
-
-* Scaling
-* Instance type
-* Workloads
-
 ---
 
-# 🔥 3. Terraform Workflow (Real-Time)
+# 🔥 3. Real-Time Flow
 
 ```bash
-Write Terraform → terraform init → terraform apply → AWS Resources Created → Configure kubectl → Deploy apps
+Terraform → AWS → EKS Cluster → Node Group → kubectl → Deploy App
 ```
 
 ---
 
-# ⚙️ 4. Step-by-Step Terraform Explanation
-
-## 🔹 Step 1: Provider
-
-```hcl id="p1"
-provider "aws" {
-  region = "ap-south-1"
-}
-```
-
-👉 Uses AWS Mumbai region
-
----
-
-## 🔹 Step 2: VPC
-
-```hcl id="p2"
-resource "aws_vpc" "eks_vpc" {
-  cidr_block = "10.0.0.0/16"
-}
-```
-
-👉 Creates private network
-
----
-
-## 🔹 Step 3: Subnets
-
-* 2 subnets (different AZs)
-
-👉 Why?
-
-* High availability
-* Fault tolerance
-
-💡 Interview point:
-EKS requires at least 2 subnets in different availability zones
-
----
-
-## 🔹 Step 4: Internet Gateway
-
-👉 Enables internet access
-
----
-
-## 🔹 Step 5: Route Table
-
-```hcl id="p3"
-0.0.0.0/0 → Internet Gateway
-```
-
-👉 Allows outbound traffic
-
----
-
-## 🔹 Step 6: IAM Role (Cluster)
-
-👉 Permissions for EKS control plane
-
----
-
-## 🔹 Step 7: EKS Cluster
-
-```hcl id="p4"
-resource "aws_eks_cluster"
-```
-
-👉 Creates Kubernetes cluster
-
----
-
-## 🔹 Step 8: Node Role
-
-👉 Permissions for EC2 nodes:
-
-* Pull images
-* Join cluster
-
----
-
-## 🔹 Step 9: Node Group
-
-```hcl id="p5"
-resource "aws_eks_node_group"
-```
-
-👉 Creates worker nodes
-
-* Instance type → t3.micro
-* Scaling → 1 to 2 nodes
-
----
-
-# 🧪 5. Important Commands
-
-## 🔹 Initialize
-
-```bash id="c1"
-terraform init
-```
-
----
-
-## 🔹 Plan
-
-```bash id="c2"
-terraform plan
-```
-
----
-
-## 🔹 Apply
-
-```bash id="c3"
-terraform apply --auto-approve
-```
-
----
-
-# 🔑 6. Configure kubectl (VERY IMPORTANT)
-
-```bash id="c4"
-aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
-```
-
-👉 Without this:
-❌ kubectl will not connect
-
----
-
-# ✅ 7. Verify Cluster
-
-```bash id="c5"
-kubectl get nodes
-```
-
-✔ Output:
-
-```
-ip-10-0-x-x   Ready
-```
-
----
-
-# 🔥 8. Interview Questions
-
-## ❓ Why EKS?
-
-* Managed Kubernetes
-* No control plane management
-* High availability
-
----
-
-## ❓ Why 2 subnets?
-
-* Multi-AZ deployment
-* Fault tolerance
-
----
-
-## ❓ EKS vs Self-Managed Kubernetes
-
-| Feature       | EKS         | Manual Kubernetes |
-| ------------- | ----------- | ----------------- |
-| Control Plane | AWS manages | You manage        |
-| Setup         | Easy        | Complex           |
-| Maintenance   | Low         | High              |
-
----
-
-## ❓ What is Node Group?
-
-👉 Collection of EC2 instances running pods
-
----
-
-# 🚀 9. Complete Terraform (One-Shot)
-
-👉 Save as: `main.tf`
-
-```hcl id="full"
-# (Full code same as your lab – trimmed here for readability)
-provider "aws" {
-  region = "ap-south-1"
-}
-
-resource "aws_vpc" "eks_vpc" {
-  cidr_block = "10.0.0.0/16"
-}
-
-# Subnets, IGW, Route tables, IAM roles,
-# EKS cluster and Node group configuration...
-```
-
----
-
-# ⚠️ 10. Important Note
-
-Cluster creation takes:
-⏳ 10–15 minutes
-
----
-
-# 🏗️ 11. Real DevOps Flow
-
-* Create infrastructure using Terraform
-* Configure kubectl
-* Deploy applications using Kubernetes
-* Integrate with CI/CD (ArgoCD)
-
----
-
-# 🎯 12. Next Level Learning
-
-* Deploy Nginx on EKS
-* Setup Ingress Controller
-* Integrate ArgoCD
-* Build CI/CD pipeline
-
----
-
-# 🧾 Final Summary
-
-✔ EKS = Managed Kubernetes
-✔ Terraform = Infrastructure as Code
-✔ Node Group = Worker nodes
-✔ kubectl = Manage cluster
-✔ Multi-AZ = High availability
-
----
-
-# 🚀 Conclusion
-
-Amazon EKS simplifies Kubernetes management by offloading control plane responsibilities while allowing full control over workloads and infrastructure.
-
----
-                Lab2
-# 🚀 One-Shot Amazon EKS Setup using Terraform (Full Working)
-
-## 👨‍💻 Author
-
-Suresh Kumar
-
----
-
-# 🧠 1. Prerequisites
-
-✔ AWS CLI configured
-✔ Terraform installed
-✔ IAM user with admin access
-
-```bash
-aws configure
-terraform -v
-```
-
----
-
-# 📁 2. Create Project
+# 📁 4. Setup Project
 
 ```bash
 mkdir eks-terraform
@@ -327,7 +67,7 @@ vi main.tf
 
 ---
 
-# 🧩 3. FULL WORKING TERRAFORM FILE (main.tf)
+# ⚙️ 5. FULL TERRAFORM CODE (ONE-SHOT)
 
 ```hcl
 provider "aws" {
@@ -508,35 +248,19 @@ resource "aws_eks_node_group" "nodes" {
 
 ---
 
-# ⚙️ 4. RUN COMMANDS (STEP-BY-STEP)
-
-## 🔹 Initialize
+# ⚙️ 6. Commands (Run Step-by-Step)
 
 ```bash
 terraform init
-```
-
----
-
-## 🔹 Plan
-
-```bash
 terraform plan
-```
-
----
-
-## 🔹 Apply
-
-```bash
 terraform apply --auto-approve
 ```
 
-⏳ Takes ~10–15 minutes
+⏳ Wait ~10–15 minutes
 
 ---
 
-# 🔑 5. Configure kubectl (IMPORTANT)
+# 🔑 7. Connect to Cluster
 
 ```bash
 aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
@@ -544,21 +268,15 @@ aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
 
 ---
 
-# ✅ 6. Verify Cluster
+# ✅ 8. Verify
 
 ```bash
 kubectl get nodes
 ```
 
-✔ Output:
-
-```
-ip-10-0-x-x   Ready
-```
-
 ---
 
-# 🚀 7. Deploy Test App
+# 🚀 9. Deploy Application
 
 ```bash
 kubectl create deployment nginx --image=nginx
@@ -568,17 +286,30 @@ kubectl get svc
 
 ---
 
-# 🎯 8. What You Created
+# 🔥 10. Interview Questions
 
-✔ VPC
-✔ Subnets (Multi-AZ)
-✔ Internet Gateway
-✔ EKS Cluster
-✔ Node Group
+## Why EKS?
+
+* Managed Kubernetes
+* High availability
+* No control plane management
 
 ---
 
-# ⚠️ 9. Cleanup (VERY IMPORTANT 💰)
+## Why 2 subnets?
+
+* Multi-AZ
+* Fault tolerance
+
+---
+
+## What is Node Group?
+
+👉 Group of EC2 instances running pods
+
+---
+
+# ⚠️ 11. Cleanup (IMPORTANT)
 
 ```bash
 terraform destroy --auto-approve
@@ -586,14 +317,14 @@ terraform destroy --auto-approve
 
 ---
 
-# 🔥 10. Interview One-Liner
+# 🎯 12. Interview One-Liner
 
-👉 “I have created an EKS cluster using Terraform, including VPC, subnets, IAM roles, and node groups, and deployed applications using kubectl.”
+“I have created an EKS cluster using Terraform, including VPC, subnets, IAM roles, and node groups, and deployed applications using kubectl.”
 
 ---
 
 # 🚀 Final Conclusion
 
-This is a complete end-to-end EKS setup using Terraform, suitable for real DevOps projects and interviews.
+This is a complete end-to-end EKS setup using Terraform for real-time DevOps use and interviews.
 
 ---
